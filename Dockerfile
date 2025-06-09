@@ -11,7 +11,9 @@ RUN if [ -z "$version_suffix" ]; then \
     dotnet publish ./src/kiota/kiota.csproj -c Release -p:TreatWarningsAsErrors=false -f net9.0 --version-suffix "$version_suffix"; \
     fi
 
-FROM mcr.microsoft.com/dotnet/runtime:9.0-noble-chiseled AS runtime
+# Don't use the chiseled image without extras 
+# (see https://github.com/microsoft/kiota/issues/4600)
+FROM mcr.microsoft.com/dotnet/runtime:9.0-noble-chiseled-extra AS runtime
 WORKDIR /app
 
 COPY --from=build-env /app/kiota/src/kiota/bin/Release/net9.0 ./
@@ -20,6 +22,7 @@ VOLUME /app/output
 VOLUME /app/openapi.yaml
 VOLUME /app/apimanifest.json
 ENV KIOTA_CONTAINER=true DOTNET_TieredPGO=1 DOTNET_TC_QuickJitForLoops=1
+
 ENTRYPOINT ["dotnet", "kiota.dll"]
 LABEL description="# Welcome to Kiota Generator \
     To start generating SDKs checkout [the getting started documentation](https://learn.microsoft.com/openapi/kiota/install#run-in-docker)  \
